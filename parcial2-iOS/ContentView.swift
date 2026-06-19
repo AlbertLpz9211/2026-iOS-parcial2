@@ -14,19 +14,22 @@ struct ContentView: View {
                 UbicacionView()
             }
             .tabItem {
-                Label("GPS", systemImage: "location.fill")
+                Label("Ubicación", systemImage: "location.fill")
             }
-
+            
             NavigationStack {
                 AcelerometroView()
             }
             .tabItem {
-                Label("Sensores", systemImage: "gyroscope")
+                Label("Acelerómetro", systemImage: "move.3d")
+            }
+            
+            NavigationStack {
+                DeviceMotionView()
+            }
+            .tabItem {
+                Label("Device Motion", systemImage: "gyroscope")
             }
         }
     }
-}
-
-#Preview {
-    ContentView()
 }
