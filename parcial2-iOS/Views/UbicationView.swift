@@ -5,89 +5,127 @@
 //  Created by Alberto Lopez on 19/06/26.
 //
 
-import SwiftUI
 import CoreLocation
+import SwiftUI
 
 struct UbicacionView: View {
     @State private var locationManager = LocationManager()
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
             switch locationManager.estadoPermiso {
             case .notDetermined:
-                Button("Solicitar permiso de ubicación") {
+                PermissionRequestView {
                     locationManager.solicitarPermiso()
                 }
-                .buttonStyle(.borderedProminent)
-
-            case .denied, .restricted:
-                VStack(spacing: 8) {
-                    Image(systemName: "location.slash")
-                        .font(.largeTitle)
-                        .foregroundStyle(.red)
-                    Text("Permiso denegado.")
-                        .bold()
-                    Text("Ve a Configuración > Privacidad > Ubicación y actívala para esta app.")
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.secondary)
-                }
-                .padding()
 
             case .authorizedWhenInUse, .authorizedAlways:
-                if let error = locationManager.error {
-                    Text("Error: \(error)")
-                        .foregroundStyle(.red)
-                } else if let coord = locationManager.ubicacion {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Label("GPS activo", systemImage: "location.fill")
-                            .foregroundStyle(.green)
-                            .font(.headline)
+                AuthorizedLocationView(
+                    coordinate: locationManager.ubicacion,
+                    error: locationManager.error
+                )
 
-                        Divider()
+            case .denied, .restricted:
+                LocationDeniedView()
 
-                        InfoRow(icono: "map", titulo: "Latitud",
-                                valor: String(format: "%.6f°", coord.latitude))
-                        InfoRow(icono: "map", titulo: "Longitud",
-                                valor: String(format: "%.6f°", coord.longitude))
-
-                        if let alt = locationManager.altitud {
-                            InfoRow(icono: "mountain.2", titulo: "Altitud",
-                                    valor: String(format: "%.1f m", alt))
-                        }
-                        if let vel = locationManager.velocidad {
-                            InfoRow(icono: "speedometer", titulo: "Velocidad",
-                                    valor: String(format: "%.1f m/s", vel))
-                        }
-                    }
-                    .padding()
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-                    .padding()
-                } else {
-                    ProgressView("Obteniendo ubicación…")
-                }
-
-            default:
-                EmptyView()
+            @unknown default:
+                Text("Estado de permiso desconocido.")
+                    .foregroundStyle(.secondary)
             }
+
+            Spacer()
         }
-        .navigationTitle("Ubicación GPS")
-        .onAppear { locationManager.solicitarPermiso() }
+        .padding()
+        .navigationTitle("Ubicación")
+        .onAppear {
+            locationManager.solicitarPermiso()
+        }
+        .onDisappear {
+            locationManager.detenerActualizaciones()
+        }
     }
 }
 
-private struct InfoRow: View {
-    let icono: String
-    let titulo: String
-    let valor: String
+private struct PermissionRequestView: View {
+    let requestPermission: () -> Void
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "location.circle")
+                .font(.system(size: 56))
+                .foregroundStyle(.blue)
+
+            Text("Permiso pendiente")
+                .font(.headline)
+
+            Button("Solicitar ubicación") {
+                requestPermission()
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+private struct AuthorizedLocationView: View {
+    let coordinate: CLLocationCoordinate2D?
+    let error: String?
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Label("GPS activo", systemImage: "location.fill")
+                .font(.headline)
+                .foregroundStyle(.green)
+
+            if let error {
+                Text(error)
+                    .foregroundStyle(.red)
+                    .multilineTextAlignment(.center)
+            } else if let coordinate {
+                VStack(spacing: 12) {
+                    LocationRow(title: "Latitud", value: String(format: "%.6f", coordinate.latitude))
+                    LocationRow(title: "Longitud", value: String(format: "%.6f", coordinate.longitude))
+                }
+                .padding()
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+            } else {
+                ProgressView("Obteniendo ubicación")
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+private struct LocationDeniedView: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "location.slash")
+                .font(.system(size: 56))
+                .foregroundStyle(.red)
+
+            Text("Permiso no disponible")
+                .font(.headline)
+
+            Text("Activa la ubicación para esta app desde Configuración > Privacidad y seguridad > Ubicación.")
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+private struct LocationRow: View {
+    let title: String
+    let value: String
 
     var body: some View {
         HStack {
-            Label(titulo, systemImage: icono)
+            Text(title)
                 .foregroundStyle(.secondary)
             Spacer()
-            Text(valor)
+            Text(value)
+                .font(.system(.title3, design: .monospaced))
                 .bold()
-                .font(.system(.body, design: .monospaced))
         }
     }
 }
