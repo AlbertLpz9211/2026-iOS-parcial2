@@ -10,9 +10,22 @@
 		F8ABF12E2FE33AD10035788C /* parcial2-iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "parcial2-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		116C08072FEB31D60034CDE1 /* Exceptions for "parcial2-iOS" folder in "parcial2-iOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				CAPTURA/Untitled.swift,
+			);
+			target = F8ABF12D2FE33AD10035788C /* parcial2-iOS */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F8ABF1302FE33AD10035788C /* parcial2-iOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				116C08072FEB31D60034CDE1 /* Exceptions for "parcial2-iOS" folder in "parcial2-iOS" target */,
+			);
 			path = "parcial2-iOS";
 			sourceTree = "<group>";
 		};
