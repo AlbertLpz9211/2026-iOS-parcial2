@@ -73,6 +73,14 @@ git push origin sesion-09-sensores
 
 ---
 
+## Evidencia Sesión 10
+
+Captura del proceso de Apple Developer Program Enrollment:
+
+![Apple Developer Program Enrollment](Capturas/apple-developer-enrollment.png)
+
+---
+
 ## Arquitectura objetivo (Sesiones 12–16)
 
 ```

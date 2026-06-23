@@ -13,8 +13,6 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
 
     var ubicacion: CLLocationCoordinate2D?
-    var altitud: Double?
-    var velocidad: Double?
     var estadoPermiso: CLAuthorizationStatus = .notDetermined
     var error: String?
 
@@ -22,14 +20,20 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBest
+        estadoPermiso = manager.authorizationStatus
     }
 
     func solicitarPermiso() {
-        manager.requestWhenInUseAuthorization()
-    }
-
-    func solicitarPermisoSiempre() {
-        manager.requestAlwaysAuthorization()
+        switch manager.authorizationStatus {
+        case .notDetermined:
+            manager.requestWhenInUseAuthorization()
+        case .authorizedWhenInUse, .authorizedAlways:
+            iniciarActualizaciones()
+        case .denied, .restricted:
+            detenerActualizaciones()
+        @unknown default:
+            detenerActualizaciones()
+        }
     }
 
     func iniciarActualizaciones() {
@@ -42,35 +46,37 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         estadoPermiso = manager.authorizationStatus
-        if estadoPermiso == .authorizedWhenInUse || estadoPermiso == .authorizedAlways {
+
+        switch manager.authorizationStatus {
+        case .authorizedWhenInUse, .authorizedAlways:
+            error = nil
             iniciarActualizaciones()
+        case .denied, .restricted:
+            ubicacion = nil
+            detenerActualizaciones()
+        case .notDetermined:
+            break
+        @unknown default:
+            detenerActualizaciones()
         }
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let ultima = locations.last else { return }
-        ubicacion = ultima.coordinate
-        altitud = ultima.altitude
-        velocidad = max(ultima.speed, 0)
+        guard let ultimaUbicacion = locations.last else { return }
+        ubicacion = ultimaUbicacion.coordinate
+        error = nil
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         self.error = error.localizedDescription
     }
 
-    // MARK: - Geofencing
     func monitorearZona(centro: CLLocationCoordinate2D, radio: CLLocationDistance, identificador: String) {
+        guard CLLocationManager.isMonitoringAvailable(for: CLCircularRegion.self) else { return }
+
         let region = CLCircularRegion(center: centro, radius: radio, identifier: identificador)
         region.notifyOnEntry = true
         region.notifyOnExit = true
         manager.startMonitoring(for: region)
-    }
-
-    func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-        print("✅ Entraste a la zona: \(region.identifier)")
-    }
-
-    func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
-        print("🚪 Saliste de la zona: \(region.identifier)")
     }
 }
