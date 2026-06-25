@@ -23,14 +23,20 @@ struct ContentView: View {
             .tabItem {
                 Label("Sensores", systemImage: "gyroscope")
             }
+
             NavigationStack {
                 DeviceMotionView()
             }
             .tabItem {
                 Label("Device Motion", systemImage: "speaker")
             }
-            
 
+            NavigationStack {
+                PatronesSesion11View()
+            }
+            .tabItem {
+                Label("Patrones", systemImage: "timer")
+            }
         }
     }
 }
