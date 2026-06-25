@@ -30,6 +30,13 @@ struct ContentView: View {
             .tabItem {
                 Label("Device Motion", systemImage: "gyroscope")
             }
+
+            NavigationStack {
+                PatronesParte1View()
+            }
+            .tabItem {
+                Label("Patrones", systemImage: "timer")
+            }
         }
     }
 }
