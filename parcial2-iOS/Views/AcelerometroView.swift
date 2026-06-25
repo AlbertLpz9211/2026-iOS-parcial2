@@ -32,34 +32,6 @@ struct AcelerometroView: View {
                 }
 
                 // MARK: Device Motion (fusionado)
-                SensorCard(titulo: "Orientación (Device Motion)", icono: "rotate.3d") {
-                    EjeRow(eje: "Pitch", valor: deviceMotion.pitch, color: .orange, sufijo: "°")
-                    EjeRow(eje: "Roll",  valor: deviceMotion.roll,  color: .purple, sufijo: "°")
-                    EjeRow(eje: "Yaw",   valor: deviceMotion.yaw,   color: .teal,   sufijo: "°")
-                    Divider()
-                    EjeRow(eje: "aX", valor: deviceMotion.aceleracionX, color: .red)
-                    EjeRow(eje: "aY", valor: deviceMotion.aceleracionY, color: .green)
-                    EjeRow(eje: "aZ", valor: deviceMotion.aceleracionZ, color: .blue)
-                }
-
-                // MARK: Detector de caída
-                SensorCard(titulo: "Detector de caída", icono: "exclamationmark.triangle") {
-                    HStack {
-                        Text("Estado")
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Text(detector.alertaCaida ? "¡CAÍDA DETECTADA!" : "Normal")
-                            .bold()
-                            .foregroundStyle(detector.alertaCaida ? .red : .green)
-                    }
-                    if detector.alertaCaida {
-                        Button("Reiniciar alerta") {
-                            detector.reiniciarAlerta()
-                        }
-                        .buttonStyle(.bordered)
-                        .tint(.red)
-                    }
-                }
 
             }
             .padding()
@@ -76,11 +48,6 @@ struct AcelerometroView: View {
             giroscopio.detener()
             deviceMotion.detener()
             detector.detener()
-        }
-        .alert("¡Caída detectada!", isPresented: $detector.alertaCaida) {
-            Button("OK") { detector.reiniciarAlerta() }
-        } message: {
-            Text("Se detectó un impacto brusco.")
         }
     }
 }
