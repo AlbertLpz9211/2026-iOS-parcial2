@@ -30,8 +30,12 @@ struct ContentView: View {
                 Label("Device Motion", systemImage: "speaker")
             }
             
-
-        }
+            NavigationStack {
+                            PatronesParte1View()
+                        }
+                        .tabItem {
+                            Label("Patrones", systemImage: "timer")
+                        }        }
     }
 }
 
