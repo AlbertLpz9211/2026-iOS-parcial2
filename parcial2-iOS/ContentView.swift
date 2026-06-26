@@ -29,7 +29,13 @@ struct ContentView: View {
             .tabItem {
                 Label("Device Motion", systemImage: "speaker")
             }
-            
+
+            NavigationStack {
+                PatronesView()
+            }
+            .tabItem {
+                Label("Patrones", systemImage: "square.stack.3d.up")
+            }
 
         }
     }
