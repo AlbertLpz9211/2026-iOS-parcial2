@@ -1,7 +1,4 @@
-//
-//  PatronesView.swift
-//  parcial2-iOS
-//
+
 //  Sesiones 11 y 12 (25/06/2026 en adelante) · Visualizador de los patrones
 //  de diseño más comunes en iOS. Cada patrón es interactivo y demostrable
 //  en el Simulador.
@@ -19,46 +16,84 @@ private struct Patron: Identifiable {
     let icono: String
     let color: Color
     let sesion: String
+    let destino: Pantalla 
 }
-
 private let catalogoPatrones: [Patron] = [
-    Patron(nombre: "Singleton",   resumen: "Una sola instancia compartida (static let shared).",            icono: "person.crop.circle.badge.checkmark", color: .blue,   sesion: "Sesión 11"),
-    Patron(nombre: "Delegate",    resumen: "Un objeto delega responsabilidad a otro vía protocol.",          icono: "arrow.triangle.branch",              color: .green,  sesion: "Sesión 11"),
-    Patron(nombre: "Observer",    resumen: "Publish-subscribe con NotificationCenter.",                      icono: "antenna.radiowaves.left.and.right",  color: .orange, sesion: "Sesión 11"),
-    Patron(nombre: "POP",         resumen: "Protocol-Oriented Programming: protocolos + extensiones.",       icono: "p.circle",                           color: .purple, sesion: "Sesión 11"),
-    Patron(nombre: "MVVM",        resumen: "View ↔︎ ViewModel ↔︎ Model, con Repository + DI.",               icono: "rectangle.3.group",                  color: .pink,   sesion: "Sesión 12"),
-    Patron(nombre: "Coordinator", resumen: "Saca la navegación fuera de las Views.",                         icono: "map",                                color: .teal,   sesion: "Sesión 12"),
-    Patron(nombre:"Patron personalizado", resumen: "RESUMEN PERSONALIZADO", icono: "rectangle.3.offgrid", color: .gray, sesion: "26/06/2026")
+    Patron(nombre: "Singleton",   resumen: "Una sola instancia compartida (static let shared).",            icono: "person.crop.circle.badge.checkmark", color: .blue,   sesion: "Sesión 11", destino: .singleton),
+    Patron(nombre: "Delegate",    resumen: "Un objeto delega responsabilidad a otro vía protocol.",          icono: "arrow.triangle.branch",              color: .green,  sesion: "Sesión 11", destino: .delegate),
+    Patron(nombre: "Observer",    resumen: "Publish-subscribe con NotificationCenter.",                     icono: "antenna.radiowaves.left.and.right",  color: .orange, sesion: "Sesión 11", destino: .observer),
+    Patron(nombre: "POP",         resumen: "Protocol-Oriented Programming: protocolos + extensiones.",       icono: "p.circle",                           color: .purple, sesion: "Sesión 11", destino: .pop),
+    Patron(nombre: "MVVM",        resumen: "View ↔️︎ ViewModel ↔️︎ Model, con Repository + DI.",               icono: "rectangle.3.group",                  color: .pink,   sesion: "Sesión 12", destino: .mvvm),
+    Patron(nombre: "Coordinator", resumen: "Saca la navegación fuera de las Views.",                         icono: "map",                                color: .teal,   sesion: "Sesión 12", destino: .coordinatorDemo),
+    Patron(nombre: "Patron personalizado", resumen: "RESUMEN PERSONALIZADO", icono: "rectangle.3.offgrid", color: .gray, sesion: "26/06/2026", destino: .configuracion)
 ]
 
-// MARK: - Vista principal (lista de patrones)
+// MARK: - Vista principal (Manejada por el Coordinator de manera global)
 
 struct PatronesView: View {
+    // El Coordinator ahora se declara al nivel más alto de la vista principal
+    @State private var coordinator = AppCoordinator()
+    
     var body: some View {
-        List {
-            Section {
-                ForEach(catalogoPatrones) { patron in
-                    NavigationLink(value: patron.nombre) {
-                        PatronRow(patron: patron)
+        @Bindable var coordinator = coordinator
+        
+        // El NavigationStack global ahora escucha la ruta del Coordinator
+        NavigationStack(path: $coordinator.ruta) {
+            List {
+                Section {
+                    ForEach(catalogoPatrones) { patron in
+                        // Usamos el destino del enum Pantalla en lugar de un String
+                        NavigationLink(value: patron.destino) {
+                            PatronRow(patron: patron)
+                        }
                     }
+                } header: {
+                    Text("Patrones de diseño en iOS")
+                } footer: {
+                    Text("Toca un patrón para verlo funcionando en vivo.")
                 }
-            } header: {
-                Text("Patrones de diseño en iOS")
-            } footer: {
-                Text("Toca un patrón para verlo funcionando en vivo.")
+            }
+            .navigationTitle("Patrones")
+            // Un solo lugar centralizado que maneja todos los destinos de la aplicación
+            .navigationDestination(for: Pantalla.self) { pantalla in
+                switch pantalla {
+                case .singleton:
+                    SingletonDemoView()
+                case .delegate:
+                    DelegateDemoView()
+                case .observer:
+                    ObserverDemoView()
+                case .pop:
+                    POPDemoView()
+                case .mvvm:
+                    MVVMDemoView()
+                case .coordinatorDemo:
+                    CoordinatorDemoView(coordinator: coordinator) // Pasamos el mismo de nivel superior
+                case .detalle(let producto):
+                    VStack(spacing: 12) {
+                        Text("Detalle de \(producto.nombre)").font(.title2).bold()
+                        Text(producto.precio, format: .currency(code: "MXN"))
+                        Button("Regresar al inicio") { coordinator.regresarAInicio() }
+                            .buttonStyle(.bordered)
+                    }
+                    .padding()
+                case .configuracion:
+                    Text("Pantalla de configuración").font(.title2)
+                }
             }
         }
-        .navigationTitle("Patrones")
-        .navigationDestination(for: String.self) { nombre in
-            switch nombre {
-            case "Singleton":   SingletonDemoView()
-            case "Delegate":    DelegateDemoView()
-            case "Observer":    ObserverDemoView()
-            case "POP":         POPDemoView()
-            case "MVVM":        MVVMDemoView()
-            case "Coordinator": CoordinatorDemoView()
-            default:            EmptyView()
+        // El contenedor de Modales (sheets) global controlado por el Coordinator
+        .sheet(item: $coordinator.modalActivo) { modal in
+            VStack(spacing: 16) {
+                switch modal {
+                case .agregarProducto: Text("Formulario para agregar producto").font(.headline)
+                case .filtros:         Text("Formulario de filtros").font(.headline)
+                }
+                Button("Cerrar") { coordinator.cerrarModal() }
+                    .buttonStyle(.borderedProminent)
             }
+            .padding()
+            .presentationDetents([.medium])
         }
     }
 }
@@ -92,7 +127,6 @@ private struct PatronRow: View {
 
 // MARK: - Componentes reutilizables
 
-/// Tarjeta de sección con título e icono (estilo coherente con DeviceMotionView).
 private struct PatronCard<Content: View>: View {
     let titulo: String
     let icono: String
@@ -110,7 +144,6 @@ private struct PatronCard<Content: View>: View {
     }
 }
 
-/// Consola que muestra el log de eventos generado por el patrón.
 private struct ConsolaLog: View {
     let lineas: [String]
 
@@ -132,8 +165,7 @@ private struct ConsolaLog: View {
     }
 }
 
-// MARK: - 1. Singleton
-
+// MARK: - 1. Singleton (Sin cambios internos)
 private struct SingletonDemoView: View {
     @State private var nombre = ConfiguracionApp.shared.nombreUsuario
     @State private var modoOscuro = ConfiguracionApp.shared.modoOscuro
@@ -167,7 +199,7 @@ private struct SingletonDemoView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                ExplicacionPatron(texto: "La misma instancia `ConfiguracionApp.shared` es accesible desde toda la app. El `private init()` impide crear copias. Equivale a un `object` de Kotlin.")
+                ExplicacionPatron(texto: "La misma instancia ConfiguracionApp.shared es accesible desde toda la app. El private init() impide crear copias. Equivale a un object de Kotlin.")
             }
             .padding()
         }
@@ -175,8 +207,7 @@ private struct SingletonDemoView: View {
     }
 }
 
-// MARK: - 2. Delegate
-
+// MARK: - 2. Delegate (Sin cambios internos)
 @Observable
 private final class DescargaDemo: DescargaDelegate {
     var log: [String] = []
@@ -231,7 +262,7 @@ private struct DelegateDemoView: View {
                     ConsolaLog(lineas: demo.log)
                 }
 
-                ExplicacionPatron(texto: "`DescargaManager` no sabe quién recibe los avisos: los reenvía a su `delegate` (un `protocol`). El delegado se declara `weak` para evitar retain cycles.")
+                ExplicacionPatron(texto: "DescargaManager no sabe quién recibe los avisos: los reenvía a su delegate (un protocol). El delegado se declara weak para evitar retain cycles.")
             }
             .padding()
         }
@@ -239,8 +270,7 @@ private struct DelegateDemoView: View {
     }
 }
 
-// MARK: - 3. Observer
-
+// MARK: - 3. Observer (Sin cambios internos)
 struct ObserverDemoView: View {
     @State private var mensaje = "Esperando evento…"
     @State private var resumenCarrito = "—"
@@ -265,7 +295,7 @@ struct ObserverDemoView: View {
                     ConsolaLog(lineas: log)
                 }
 
-                ExplicacionPatron(texto: "`SesionManager` publica eventos en el `NotificationCenter` sin conocer a sus oyentes. La vista se suscribe con `.onReceive`. Es el publish-subscribe nativo, anterior a Combine.")
+                ExplicacionPatron(texto: "SesionManager publica eventos en el NotificationCenter sin conocer a sus oyentes. La vista se suscribe con .onReceive. Es el publish-subscribe nativo, anterior a Combine.")
             }
             .padding()
         }
@@ -284,8 +314,7 @@ struct ObserverDemoView: View {
     }
 }
 
-// MARK: - 4. POP
-
+// MARK: - 4. POP (Sin cambios internos)
 private struct POPDemoView: View {
     @State private var resultados: [String] = []
 
@@ -307,7 +336,7 @@ private struct POPDemoView: View {
                     ConsolaLog(lineas: resultados)
                 }
 
-                ExplicacionPatron(texto: "`Saludable` da una implementación por defecto vía `extension`. `Estudiante` la hereda; `ProfesorPOP` la sobrescribe. La función genérica `presentar<T: Saludable>` acepta cualquier tipo que cumpla el protocolo.")
+                ExplicacionPatron(texto: "Saludable da una implementación por defecto vía extension. Estudiante la hereda; ProfesorPOP la sobrescribe. La función genérica presentar<T: Saludable> acepta cualquier tipo que cumpla el protocolo.")
             }
             .padding()
         }
@@ -315,8 +344,7 @@ private struct POPDemoView: View {
     }
 }
 
-// MARK: - 5. MVVM (con Repository + DI)
-
+// MARK: - 5. MVVM (Sin cambios internos)
 private struct MVVMDemoView: View {
     @State private var viewModel: ProductosViewModel
     @State private var usandoMock: Bool
@@ -374,7 +402,7 @@ private struct MVVMDemoView: View {
                     .buttonStyle(.bordered)
                 }
 
-                ExplicacionPatron(texto: "La View no tiene lógica de negocio: solo describe UI a partir del `ProductosViewModel` (`@Observable`). El ViewModel recibe su `ProductoRepository` por inyección, así puedes intercambiar Impl ↔︎ Mock sin tocar la vista (esto habilita los tests unitarios).")
+                ExplicacionPatron(texto: "La View no tiene lógica de negocio: solo describe UI a partir del ProductosViewModel (@Observable). El ViewModel recibe su ProductoRepository por inyección, así puedes intercambiar Impl ↔️︎ Mock sin tocar la vista (esto habilita los tests unitarios).")
             }
             .padding()
         }
@@ -389,65 +417,41 @@ private struct MVVMDemoView: View {
     }
 }
 
-// MARK: - 6. Coordinator
+// MARK: - 6. Coordinator (Limpiado y enlazado al stack global)
 
 private struct CoordinatorDemoView: View {
-    @State private var coordinator = AppCoordinator()
+    // Recibe el coordinador en lugar de instanciar un NavigationStack nuevo localmente
+    let coordinator: AppCoordinator
 
     var body: some View {
-        @Bindable var coordinator = coordinator
-
-        VStack(spacing: 0) {
-            NavigationStack(path: $coordinator.ruta) {
-                ScrollView {
-                    VStack(spacing: 16) {
-                        PatronCard(titulo: "La navegación vive en el Coordinator", icono: "map") {
-                            Button("Ver detalle de producto") {
-                                coordinator.irADetalle(Producto(id: 1, nombre: "Demo", precio: 100))
-                            }
-                            .buttonStyle(.borderedProminent)
-                            Button("Ir a configuración") { coordinator.irAConfiguracion() }
-                                .buttonStyle(.bordered)
-                            Button("Mostrar modal (sheet)") { coordinator.mostrarModalAgregar() }
-                                .buttonStyle(.bordered)
-                            Text("Profundidad de pila: \(coordinator.ruta.count)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        ExplicacionPatron(texto: "Las Views no llaman a la navegación directamente: piden al `AppCoordinator` (`@Observable`) que decida la ruta. La pila se maneja con `NavigationStack(path:)` y los modales con `.sheet(item:)`.")
-                    }
-                    .padding()
-                }
-                .navigationTitle("Coordinator")
-                .navigationDestination(for: Pantalla.self) { pantalla in
-                    switch pantalla {
-                    case .detalle(let producto):
-                        VStack(spacing: 12) {
-                            Text("Detalle de \(producto.nombre)").font(.title2).bold()
-                            Text(producto.precio, format: .currency(code: "MXN"))
-                            Button("Regresar al inicio") { coordinator.regresarAInicio() }
-                                .buttonStyle(.bordered)
-                        }
-                        .padding()
-                    case .configuracion:
-                        Text("Pantalla de configuración").font(.title2)
-                    }
-                }
-            }
-        }
-        .sheet(item: $coordinator.modalActivo) { modal in
+        ScrollView {
             VStack(spacing: 16) {
-                switch modal {
-                case .agregarProducto: Text("Formulario para agregar producto").font(.headline)
-                case .filtros:         Text("Formulario de filtros").font(.headline)
-                }
-                Button("Cerrar") { coordinator.cerrarModal() }
+                PatronCard(titulo: "La navegación vive en el Coordinator", icono: "map") {
+                    Button("Ver detalle de producto") {
+                        coordinator.irADetalle(Producto(id: 1, nombre: "Demo", precio: 100))
+                    }
                     .buttonStyle(.borderedProminent)
+                    
+                    Button("Ir a configuración") {
+                        coordinator.irAConfiguracion()
+                    }
+                    .buttonStyle(.bordered)
+                    
+                    Button("Mostrar modal (sheet)") {
+                        coordinator.mostrarModalAgregar()
+                    }
+                    .buttonStyle(.bordered)
+                    
+                    Text("Profundidad de pila global: \(coordinator.ruta.count)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                ExplicacionPatron(texto: "Las Views no llaman a la navegación directamente: piden al AppCoordinator (@Observable) que decida la ruta. La pila se maneja con NavigationStack(path:) y los modales con .sheet(item:).")
             }
             .padding()
-            .presentationDetents([.medium])
         }
+        .navigationTitle("Coordinator")
     }
 }
 

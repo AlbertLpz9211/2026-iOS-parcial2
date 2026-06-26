@@ -180,9 +180,15 @@ class ProductosViewModel {
 }
 
 // MARK: - 6. Coordinator Pattern (Sesión 12)
-// Saca la lógica de navegación fuera de las Views.
+
 
 enum Pantalla: Hashable {
+    case singleton
+    case delegate
+    case observer
+    case pop
+    case mvvm
+    case coordinatorDemo
     case detalle(Producto)
     case configuracion
 }
