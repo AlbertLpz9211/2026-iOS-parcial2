@@ -392,58 +392,55 @@ private struct MVVMDemoView: View {
 // MARK: - 6. Coordinator
 
 private struct CoordinatorDemoView: View {
-    @State private var coordinator = AppCoordinator()
+    @StateObject private var coordinator = AppCoordinator()
 
     var body: some View {
-        @Bindable var coordinator = coordinator
-
-        VStack(spacing: 0) {
-            NavigationStack(path: $coordinator.ruta) {
-                ScrollView {
-                    VStack(spacing: 16) {
-                        PatronCard(titulo: "La navegación vive en el Coordinator", icono: "map") {
-                            Button("Ver detalle de producto") {
-                                coordinator.irADetalle(Producto(id: 1, nombre: "Demo", precio: 100))
-                            }
-                            .buttonStyle(.borderedProminent)
-                            Button("Ir a configuración") { coordinator.irAConfiguracion() }
-                                .buttonStyle(.bordered)
-                            Button("Mostrar modal (sheet)") { coordinator.mostrarModalAgregar() }
-                                .buttonStyle(.bordered)
-                            Text("Profundidad de pila: \(coordinator.ruta.count)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        ExplicacionPatron(texto: "Las Views no llaman a la navegación directamente: piden al `AppCoordinator` (`@Observable`) que decida la ruta. La pila se maneja con `NavigationStack(path:)` y los modales con `.sheet(item:)`.")
+        ScrollView {
+            VStack(spacing: 16) {
+                PatronCard(titulo: "La navegación vive en el Coordinator", icono: "map") {
+                    Button("Ver detalle de producto") {
+                        coordinator.irADetalle(Producto(id: 1, nombre: "Demo", precio: 100))
                     }
-                    .padding()
-                }
-                .navigationTitle("Coordinator")
-                .navigationDestination(for: Pantalla.self) { pantalla in
-                    switch pantalla {
-                    case .detalle(let producto):
-                        VStack(spacing: 12) {
-                            Text("Detalle de \(producto.nombre)").font(.title2).bold()
-                            Text(producto.precio, format: .currency(code: "MXN"))
-                            Button("Regresar al inicio") { coordinator.regresarAInicio() }
-                                .buttonStyle(.bordered)
-                        }
-                        .padding()
-                    case .configuracion:
-                        Text("Pantalla de configuración").font(.title2)
+                    .buttonStyle(.borderedProminent)
+
+                    Button("Ir a configuración") {
+                        coordinator.irAConfiguracion()
                     }
+                    .buttonStyle(.bordered)
+
+                    Button("Mostrar modal") {
+                        coordinator.mostrarModalAgregar()
+                    }
+                    .buttonStyle(.bordered)
                 }
+
+                ExplicacionPatron(texto: "El Coordinator decide a qué pantalla ir. La vista solo llama funciones como irADetalle, irAConfiguracion o mostrarModal.")
             }
+            .padding()
+        }
+        .navigationTitle("Coordinator")
+        .navigationDestination(item: $coordinator.pantallaActual) { pantalla in
+            CoordinatorDestinoView(
+                pantalla: pantalla,
+                coordinator: coordinator
+            )
         }
         .sheet(item: $coordinator.modalActivo) { modal in
             VStack(spacing: 16) {
                 switch modal {
-                case .agregarProducto: Text("Formulario para agregar producto").font(.headline)
-                case .filtros:         Text("Formulario de filtros").font(.headline)
+                case .agregarProducto:
+                    Text("Formulario para agregar producto")
+                        .font(.headline)
+
+                case .filtros:
+                    Text("Formulario de filtros")
+                        .font(.headline)
                 }
-                Button("Cerrar") { coordinator.cerrarModal() }
-                    .buttonStyle(.borderedProminent)
+
+                Button("Cerrar") {
+                    coordinator.cerrarModal()
+                }
+                .buttonStyle(.borderedProminent)
             }
             .padding()
             .presentationDetents([.medium])
@@ -451,6 +448,37 @@ private struct CoordinatorDemoView: View {
     }
 }
 
+private struct CoordinatorDestinoView: View {
+    let pantalla: Pantalla
+    @ObservedObject var coordinator: AppCoordinator
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            switch pantalla {
+            case .detalle(let producto):
+                Text("Detalle de \(producto.nombre)")
+                    .font(.title2)
+                    .bold()
+                
+                Text(producto.precio, format: .currency(code: "MXN"))
+                
+            case .configuracion:
+                Text("Pantalla de configuración")
+                    .font(.title2)
+                    .bold()
+            }
+            
+            Button("Regresar al inicio") {
+                coordinator.regresarAInicio()
+                dismiss()
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding()
+        .navigationTitle("Detalle")
+    }
+}
 // MARK: - Explicación
 
 private struct ExplicacionPatron: View {

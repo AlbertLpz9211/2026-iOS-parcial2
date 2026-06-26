@@ -9,9 +9,10 @@
 
 import Foundation
 import Observation
+import Combine
 
 // MARK: - 1. Singleton (Sesión 11)
-// Una sola instancia compartida vía `static let shared`. Equivalente al `object` de Kotlin.
+// Una sola instancia compartida vía static let shared. Equivalente al object de Kotlin.
 
 final class ConfiguracionApp {
     static let shared = ConfiguracionApp()
@@ -22,7 +23,7 @@ final class ConfiguracionApp {
 }
 
 // MARK: - 2. Delegate Pattern (Sesión 11)
-// Un objeto delega una responsabilidad a otro vía un `protocol`. El patrón más "iOS".
+// Un objeto delega una responsabilidad a otro vía un protocol. El patrón más "iOS".
 
 protocol DescargaDelegate: AnyObject {   // AnyObject permite declarar el delegado como weak
     func descargaCompletada(archivo: String)
@@ -44,8 +45,10 @@ final class DescargaManager {
                 self?.delegate?.progresoActualizado(porcentaje: Double(i))
             }
         }
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.1) { [weak self] in
             guard let self else { return }
+
             if url.hasPrefix("https") {
                 self.delegate?.descargaCompletada(archivo: "documento.pdf")
             } else {
@@ -71,13 +74,19 @@ struct CarritoEvento {
 final class SesionManager {
     func cerrarSesion() {
         NotificationCenter.default.post(
-            name: .usuarioCambiado, object: nil, userInfo: ["accion": "logout"]
+            name: .usuarioCambiado,
+            object: nil,
+            userInfo: ["accion": "logout"]
         )
     }
 
     func notificarCarrito(items: Int, monto: Double) {
         let evento = CarritoEvento(totalItems: items, montoTotal: monto)
-        NotificationCenter.default.post(name: .carritoActualizado, object: evento)
+
+        NotificationCenter.default.post(
+            name: .carritoActualizado,
+            object: evento
+        )
     }
 }
 
@@ -105,6 +114,7 @@ struct Estudiante: Saludable, ConIdentificador {
 
 struct ProfesorPOP: Saludable {
     var nombre: String
+
     func saludar() -> String { "Buenos días, profesor \(nombre)" }   // sobrescribe el default
 }
 
@@ -129,6 +139,7 @@ protocol ProductoRepository {
 final class ProductoRepositoryImpl: ProductoRepository {
     func obtenerProductos() async throws -> [Producto] {
         try await Task.sleep(for: .milliseconds(500))   // simula latencia de red
+
         return [
             Producto(id: 1, nombre: "Laptop", precio: 15999),
             Producto(id: 2, nombre: "Mouse",  precio: 399)
@@ -137,14 +148,21 @@ final class ProductoRepositoryImpl: ProductoRepository {
 }
 
 final class ProductoRepositoryMock: ProductoRepository {
-    var productosAEntregar: [Producto] = [Producto(id: 99, nombre: "Producto de prueba", precio: 1)]
+    var productosAEntregar: [Producto] = [
+        Producto(id: 99, nombre: "Producto de prueba", precio: 1)
+    ]
+
     var deberiaFallar = false
 
     func obtenerProductos() async throws -> [Producto] {
         if deberiaFallar {
-            throw NSError(domain: "Mock", code: 1,
-                          userInfo: [NSLocalizedDescriptionKey: "Error simulado"])
+            throw NSError(
+                domain: "Mock",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Error simulado"]
+            )
         }
+
         return productosAEntregar
     }
 }
@@ -166,11 +184,13 @@ class ProductosViewModel {
     func cargarProductos() async {
         cargando = true
         error = nil
+
         do {
             productos = try await repository.obtenerProductos()
         } catch {
             self.error = error.localizedDescription
         }
+
         cargando = false
     }
 
@@ -182,26 +202,52 @@ class ProductosViewModel {
 // MARK: - 6. Coordinator Pattern (Sesión 12)
 // Saca la lógica de navegación fuera de las Views.
 
-enum Pantalla: Hashable {
+enum Pantalla: Hashable, Identifiable {
     case detalle(Producto)
     case configuracion
+
+    var id: String {
+        switch self {
+        case .detalle(let producto):
+            return "detalle-\(producto.id)"
+        case .configuracion:
+            return "configuracion"
+        }
+    }
 }
 
-enum PantallaModal: Identifiable {
+enum PantallaModal: Int, Identifiable {
     case agregarProducto
     case filtros
-    var id: Int { hashValue }
+
+    var id: Int {
+        rawValue
+    }
 }
 
 @MainActor
-@Observable
-class AppCoordinator {
-    var ruta: [Pantalla] = []
-    var modalActivo: PantallaModal?
+final class AppCoordinator: ObservableObject {
+    @Published var pantallaActual: Pantalla?
+    @Published var modalActivo: PantallaModal?
 
-    func irADetalle(_ producto: Producto) { ruta.append(.detalle(producto)) }
-    func irAConfiguracion()               { ruta.append(.configuracion) }
-    func mostrarModalAgregar()            { modalActivo = .agregarProducto }
-    func cerrarModal()                    { modalActivo = nil }
-    func regresarAInicio()                { ruta.removeAll() }
+    func irADetalle(_ producto: Producto) {
+        pantallaActual = .detalle(producto)
+    }
+
+    func irAConfiguracion() {
+        pantallaActual = .configuracion
+    }
+
+    func mostrarModalAgregar() {
+        modalActivo = .agregarProducto
+    }
+
+    func cerrarModal() {
+        modalActivo = nil
+    }
+
+    func regresarAInicio() {
+        pantallaActual = nil
+        modalActivo = nil
+    }
 }
