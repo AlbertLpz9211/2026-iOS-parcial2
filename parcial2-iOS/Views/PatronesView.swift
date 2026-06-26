@@ -27,7 +27,8 @@ private let catalogoPatrones: [Patron] = [
     Patron(nombre: "Observer",    resumen: "Publish-subscribe con NotificationCenter.",                      icono: "antenna.radiowaves.left.and.right",  color: .orange, sesion: "Sesión 11"),
     Patron(nombre: "POP",         resumen: "Protocol-Oriented Programming: protocolos + extensiones.",       icono: "p.circle",                           color: .purple, sesion: "Sesión 11"),
     Patron(nombre: "MVVM",        resumen: "View ↔︎ ViewModel ↔︎ Model, con Repository + DI.",               icono: "rectangle.3.group",                  color: .pink,   sesion: "Sesión 12"),
-    Patron(nombre: "Coordinator", resumen: "Saca la navegación fuera de las Views.",                         icono: "map",                                color: .teal,   sesion: "Sesión 12")
+    Patron(nombre: "Coordinator", resumen: "Saca la navegación fuera de las Views.",                         icono: "map",                                color: .teal,   sesion: "Sesión 12"),
+    Patron(nombre:"Patron personalizado", resumen: "RESUMEN PERSONALIZADO", icono: "rectangle.3.offgrid", color: .gray, sesion: "26/06/2026")
 ]
 
 // MARK: - Vista principal (lista de patrones)
@@ -334,9 +335,11 @@ private struct MVVMDemoView: View {
                         .foregroundStyle(.secondary)
                     HStack {
                         Button("Usar Impl") { cambiarRepo(ProductoRepositoryImpl(), mock: false) }
-                            .buttonStyle(usandoMock ? .bordered : .borderedProminent)
+                            .buttonStyle(.borderedProminent)
+                            .tint(usandoMock ? .gray : .accentColor)
                         Button("Usar Mock") { cambiarRepo(ProductoRepositoryMock(), mock: true) }
-                            .buttonStyle(usandoMock ? .borderedProminent : .bordered)
+                            .buttonStyle(.borderedProminent)
+                            .tint(usandoMock ? .accentColor : .gray)
                     }
                 }
 
